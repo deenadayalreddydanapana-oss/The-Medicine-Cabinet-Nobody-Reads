@@ -1,0 +1,2141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MediCare — Medication Adherence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Devanagari:wght@300;400;500;600&family=Noto+Sans+Telugu:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1e2530;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --accent: #3fb950;
+    --accent2: #58a6ff;
+    --warn: #d29922;
+    --danger: #f85149;
+    --pill-bg: #1e2530;
+    --radius: 14px;
+    --font-head: 'DM Serif Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---------- GLOBAL LAYOUT ---------- */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .topbar .logo { font-family: var(--font-head); font-size: 22px; color: var(--accent); letter-spacing: -0.5px; }
+  .topbar .role-badge {
+    font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 20px; background: var(--surface2); color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .main { flex: 1; padding: 32px 24px; max-width: 600px; margin: 0 auto; width: 100%; }
+
+  /* ---------- BUTTONS ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 24px; border-radius: 10px; font-family: var(--font-body);
+    font-size: 15px; font-weight: 500; cursor: pointer; border: none;
+    transition: all 0.18s ease; width: 100%;
+  }
+  .btn-primary { background: var(--accent); color: #0d1117; }
+  .btn-primary:hover { background: #4fc862; transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent2); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: #ff6b63; }
+  .btn-warn { background: var(--warn); color: #0d1117; }
+  .btn-sm { padding: 8px 16px; font-size: 13px; width: auto; border-radius: 8px; }
+
+  /* ---------- CARDS ---------- */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 12px; }
+
+  /* ---------- FORM ELEMENTS ---------- */
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.3px; }
+  .form-input {
+    width: 100%; padding: 12px 14px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-family: var(--font-body); font-size: 15px;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus { outline: none; border-color: var(--accent2); }
+  .form-select { appearance: none; cursor: pointer; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ---------- LOGIN SCREEN ---------- */
+  #login-screen {
+    background: radial-gradient(ellipse at 20% 50%, #0e2a1a 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, #0a1f3a 0%, transparent 60%),
+                var(--bg);
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  .login-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 40px 36px; width: 100%; max-width: 420px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  }
+  .login-logo { font-family: var(--font-head); font-size: 36px; color: var(--accent); margin-bottom: 4px; }
+  .login-sub { font-size: 14px; color: var(--muted); margin-bottom: 32px; }
+  .role-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 24px; }
+  .role-card {
+    padding: 14px 8px; border-radius: 12px; border: 2px solid var(--border);
+    background: var(--surface2); cursor: pointer; text-align: center;
+    transition: all 0.15s; font-size: 13px; font-weight: 500;
+  }
+  .role-card:hover { border-color: var(--accent2); }
+  .role-card.selected { border-color: var(--accent); background: rgba(63,185,80,0.1); color: var(--accent); }
+  .role-icon { font-size: 26px; display: block; margin-bottom: 6px; }
+
+  /* ---------- SECTION HEADERS ---------- */
+  .page-head { margin-bottom: 28px; }
+  .page-head h1 { font-family: var(--font-head); font-size: 28px; line-height: 1.2; margin-bottom: 6px; }
+  .page-head p { font-size: 14px; color: var(--muted); }
+
+  /* ---------- STEP INDICATOR ---------- */
+  .steps { display: flex; gap: 8px; align-items: center; margin-bottom: 28px; }
+  .step-dot {
+    width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;
+    color: var(--muted); flex-shrink: 0; transition: all 0.2s;
+  }
+  .step-dot.active { border-color: var(--accent); color: var(--accent); background: rgba(63,185,80,0.1); }
+  .step-dot.done { border-color: var(--accent); background: var(--accent); color: #0d1117; }
+  .step-line { flex: 1; height: 2px; background: var(--border); border-radius: 2px; }
+  .step-line.done { background: var(--accent); }
+
+  /* ---------- MED CARD ---------- */
+  .med-item {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .med-item .med-icon { font-size: 22px; flex-shrink: 0; }
+  .med-item .med-info { flex: 1; }
+  .med-item .med-name { font-weight: 600; font-size: 15px; }
+  .med-item .med-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .med-item .med-remove { font-size: 18px; cursor: pointer; color: var(--muted); padding: 4px; }
+  .med-item .med-remove:hover { color: var(--danger); }
+
+  /* ---------- NOTIFICATION POPUP ---------- */
+  .notif-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    z-index: 999; align-items: center; justify-content: center; padding: 24px;
+  }
+  .notif-overlay.show { display: flex; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  .notif-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px 28px; max-width: 380px; width: 100%;
+    text-align: center; box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  }
+  .notif-icon { font-size: 48px; margin-bottom: 16px; }
+  .notif-title { font-family: var(--font-head); font-size: 22px; margin-bottom: 8px; }
+  .notif-msg { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+  .notif-actions { display: flex; gap: 10px; }
+  .notif-actions .btn { flex: 1; }
+  .notif-countdown { font-size: 12px; color: var(--muted); margin-top: 12px; }
+
+  /* ---------- CALENDAR ---------- */
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+  .cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; position: relative; }
+  .cal-day.taken { background: rgba(63,185,80,0.2); color: var(--accent); }
+  .cal-day.missed { background: rgba(248,81,73,0.2); color: var(--danger); }
+  .cal-day.refused { background: rgba(210,153,34,0.2); color: var(--warn); }
+  .cal-day.empty { opacity: 0.3; color: var(--muted); }
+  .cal-day.today { border: 2px solid var(--accent2); }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; position: absolute; bottom: 3px; }
+
+  /* ---------- STATUS CHIPS ---------- */
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px;
+    border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
+  }
+  .chip-green { background: rgba(63,185,80,0.15); color: var(--accent); }
+  .chip-red { background: rgba(248,81,73,0.15); color: var(--danger); }
+  .chip-yellow { background: rgba(210,153,34,0.15); color: var(--warn); }
+  .chip-blue { background: rgba(88,166,255,0.15); color: var(--accent2); }
+
+  /* ---------- ALERT BANNER ---------- */
+  .alert-banner {
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
+    display: flex; align-items: flex-start; gap: 10px; font-size: 14px;
+    border-left: 4px solid;
+  }
+  .alert-info { background: rgba(88,166,255,0.08); border-color: var(--accent2); }
+  .alert-warn { background: rgba(210,153,34,0.08); border-color: var(--warn); }
+  .alert-danger { background: rgba(248,81,73,0.08); border-color: var(--danger); }
+  .alert-success { background: rgba(63,185,80,0.08); border-color: var(--accent); }
+
+  /* ---------- ACTION LOG ---------- */
+  .log-item {
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+    font-size: 13px; display: flex; align-items: flex-start; gap: 10px;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-time { color: var(--muted); flex-shrink: 0; width: 64px; }
+  .log-text { flex: 1; line-height: 1.5; }
+
+  /* ---------- TABS ---------- */
+  .tabs { display: flex; gap: 4px; background: var(--surface2); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+  .tab {
+    flex: 1; padding: 8px; border-radius: 7px; text-align: center;
+    font-size: 13px; font-weight: 500; cursor: pointer; color: var(--muted);
+    transition: all 0.15s; border: none; background: none;
+  }
+  .tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+  /* ---------- PROGRESS RING ---------- */
+  .progress-wrap { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+  .progress-wrap svg { transform: rotate(-90deg); }
+  .progress-val { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 600; }
+
+  /* ---------- DIVIDER ---------- */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* ---------- BOTTOM NAV ---------- */
+  .bottom-nav {
+    display: flex; background: var(--surface); border-top: 1px solid var(--border);
+    padding: 8px 0 4px;
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: var(--muted);
+    cursor: pointer; padding: 6px 0; text-transform: uppercase;
+    border: none; background: none; transition: color 0.15s;
+  }
+  .nav-item .nav-icon { font-size: 20px; }
+  .nav-item.active { color: var(--accent); }
+
+  /* ---------- TOGGLE ---------- */
+  .toggle-wrap { display: flex; align-items: center; gap: 12px; }
+  .toggle {
+    width: 44px; height: 24px; background: var(--border); border-radius: 12px;
+    position: relative; cursor: pointer; transition: background 0.2s; border: none;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%; background: #fff;
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(20px); }
+  .toggle-label { font-size: 14px; font-weight: 500; }
+
+  /* ---------- SCHEDULE PREVIEW ---------- */
+  .sched-item {
+    display: flex; align-items: center; gap: 14px; padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .sched-item:last-child { border-bottom: none; }
+  .sched-time { font-size: 17px; font-weight: 600; min-width: 58px; }
+  .sched-info { flex: 1; }
+  .sched-name { font-size: 14px; font-weight: 500; }
+  .sched-detail { font-size: 12px; color: var(--muted); }
+  .sched-status { font-size: 20px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .mt-24 { margin-top: 24px; }
+  .flex { display: flex; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .gap-8 { gap: 8px; }
+  .gap-12 { gap: 12px; }
+  .text-muted { color: var(--muted); font-size: 13px; }
+  .text-accent { color: var(--accent); }
+  .fw-600 { font-weight: 600; }
+  .hidden { display: none !important; }
+
+  /* ---------- VOICE NOTE BUTTON ---------- */
+  .voice-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 24px; border: none; cursor: pointer;
+    font-family: var(--font-body); font-size: 14px; font-weight: 600;
+    background: linear-gradient(135deg, #1a4f6e, #1a3f5e);
+    color: var(--accent2); border: 1px solid rgba(88,166,255,0.3);
+    transition: all 0.2s; width: auto;
+  }
+  .voice-btn:hover { background: linear-gradient(135deg, #1e5a80, #1a4a70); transform: scale(1.02); }
+  .voice-btn.speaking { background: linear-gradient(135deg, #0e3a52, #0e2e40); animation: pulse-voice 1.2s ease-in-out infinite; }
+  @keyframes pulse-voice { 0%,100%{box-shadow:0 0 0 0 rgba(88,166,255,0.4)} 50%{box-shadow:0 0 0 8px rgba(88,166,255,0)} }
+  .voice-wave { display: flex; align-items: center; gap: 2px; }
+  .voice-wave span { width: 3px; border-radius: 2px; background: var(--accent2); animation: wave 0.8s ease-in-out infinite; }
+  .voice-wave span:nth-child(1){height:8px;animation-delay:0s}
+  .voice-wave span:nth-child(2){height:14px;animation-delay:0.1s}
+  .voice-wave span:nth-child(3){height:10px;animation-delay:0.2s}
+  .voice-wave span:nth-child(4){height:16px;animation-delay:0.3s}
+  .voice-wave span:nth-child(5){height:8px;animation-delay:0.4s}
+  @keyframes wave { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(0.4)} }
+
+  /* ---------- TABLET COUNT & EXPIRY ---------- */
+  .pill-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .pill-stat-box {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px; text-align: center;
+  }
+  .pill-stat-val { font-size: 22px; font-weight: 700; }
+  .pill-stat-label { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .pill-stat-box.low { border-color: var(--warn); background: rgba(210,153,34,0.06); }
+  .pill-stat-box.low .pill-stat-val { color: var(--warn); }
+  .pill-stat-box.critical { border-color: var(--danger); background: rgba(248,81,73,0.06); }
+  .pill-stat-box.critical .pill-stat-val { color: var(--danger); }
+  .pill-stat-box.ok .pill-stat-val { color: var(--accent); }
+
+  .expiry-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600; padding: 2px 8px;
+    border-radius: 10px; margin-top: 4px;
+  }
+  .expiry-ok { background: rgba(63,185,80,0.12); color: var(--accent); }
+  .expiry-soon { background: rgba(210,153,34,0.12); color: var(--warn); }
+  .expiry-urgent { background: rgba(248,81,73,0.12); color: var(--danger); }
+  .expiry-expired { background: rgba(248,81,73,0.2); color: var(--danger); border: 1px solid var(--danger); }
+
+  .stock-bar-wrap { margin-top: 6px; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .stock-bar { height: 100%; border-radius: 3px; transition: width 0.4s; }
+
+  /* ---------- MED CARD ENHANCED ---------- */
+  .med-item-enhanced {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; margin-bottom: 12px;
+  }
+  .med-item-enhanced .med-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .med-item-enhanced .med-icon { font-size: 24px; flex-shrink: 0; }
+  .med-item-enhanced .med-info { flex: 1; }
+  .med-item-enhanced .med-name { font-weight: 600; font-size: 15px; }
+  .med-item-enhanced .med-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .med-item-enhanced .med-remove { font-size: 18px; cursor: pointer; color: var(--muted); padding: 4px; }
+  .med-item-enhanced .med-remove:hover { color: var(--danger); }
+  .med-item-enhanced .med-details { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .med-detail-item { font-size: 12px; }
+  .med-detail-item .lbl { color: var(--muted); }
+  .med-detail-item .val { font-weight: 600; margin-top: 2px; }
+
+  /* ---------- INVENTORY ALERTS ---------- */
+  .inventory-alert {
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;
+    font-size: 13px; display: flex; align-items: flex-start; gap: 10px;
+    border: 1px solid;
+  }
+  .inv-warn { background: rgba(210,153,34,0.08); border-color: rgba(210,153,34,0.4); color: var(--warn); }
+  .inv-danger { background: rgba(248,81,73,0.08); border-color: rgba(248,81,73,0.4); color: var(--danger); }
+  .inv-alert-msg { flex: 1; color: var(--text); line-height: 1.5; }
+
+  /* ---------- LANGUAGE SWITCHER ---------- */
+  .lang-bar {
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+    padding: 10px 24px; background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .lang-bar-label { font-size: 11px; color: var(--muted); font-weight: 600;
+    letter-spacing: 0.8px; text-transform: uppercase; margin-right: 4px; }
+  .lang-btn {
+    padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .lang-btn:hover { border-color: var(--accent2); color: var(--text); }
+  .lang-btn.active { border-color: var(--accent); background: rgba(63,185,80,0.12); color: var(--accent); font-weight: 600; }
+
+  /* Regional script fonts */
+  .lang-hi, .lang-mr { font-family: 'Noto Sans Devanagari', 'DM Sans', sans-serif !important; }
+  .lang-te { font-family: 'Noto Sans Telugu', 'DM Sans', sans-serif !important; }
+  body.lang-hi, body.lang-mr { font-family: 'Noto Sans Devanagari', sans-serif; }
+  body.lang-te { font-family: 'Noto Sans Telugu', sans-serif; }
+  body.lang-hi .login-logo, body.lang-mr .login-logo, body.lang-te .login-logo,
+  body.lang-hi .page-head h1, body.lang-mr .page-head h1, body.lang-te .page-head h1,
+  body.lang-hi .notif-title, body.lang-mr .notif-title, body.lang-te .notif-title {
+    font-family: inherit;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login-screen" class="screen active">
+  <div class="lang-bar">
+    <span class="lang-bar-label">🌐 Language:</span>
+    <button class="lang-btn active" onclick="setLang('en',this)">English</button>
+    <button class="lang-btn" onclick="setLang('hi',this)">हिंदी</button>
+    <button class="lang-btn" onclick="setLang('te',this)">తెలుగు</button>
+    <button class="lang-btn" onclick="setLang('mr',this)">मराठी</button>
+  </div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
+  <div class="login-box">
+    <div class="login-logo">MediCare</div>
+    <div class="login-sub" data-i18n="login_sub">Medication adherence, built for families</div>
+
+    <div class="form-group">
+      <label class="form-label" data-i18n="full_name">Full name</label>
+      <input class="form-input" id="login-name" placeholder="Enter your name" type="text"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="phone">Phone number</label>
+      <input class="form-input" id="login-phone" placeholder="+91 XXXXX XXXXX" type="tel"/>
+    </div>
+
+    <div class="form-label" style="margin-bottom:10px" data-i18n="i_am">I am a…</div>
+    <div class="role-grid">
+      <div class="role-card" onclick="selectRole('patient',this)">
+        <span class="role-icon">👴</span><span data-i18n="role_patient">Patient</span>
+      </div>
+      <div class="role-card" onclick="selectRole('caretaker',this)">
+        <span class="role-icon">🧑‍⚕️</span><span data-i18n="role_caretaker">Caretaker</span>
+      </div>
+      <div class="role-card" onclick="selectRole('family',this)">
+        <span class="role-icon">👨‍👩‍👧</span><span data-i18n="role_family">Family</span>
+      </div>
+    </div>
+
+    <div id="patient-link-field" class="form-group hidden">
+      <label class="form-label" data-i18n="patient_id">Patient ID (caretaker/family enter this)</label>
+      <input class="form-input" id="patient-link-id" placeholder="e.g. PAT-001" type="text"/>
+    </div>
+
+    <button class="btn btn-primary" onclick="doLogin()" data-i18n="continue_btn">Continue →</button>
+  </div>
+  </div>
+</div>
+
+<!-- ===================== PATIENT ONBOARDING ===================== -->
+<div id="patient-onboard-screen" class="screen">
+  <div class="topbar">
+    <div class="logo">MediCare</div>
+    <div class="role-badge" data-i18n="patient_setup">Patient Setup</div>
+  </div>
+  <div class="lang-bar">
+    <span class="lang-bar-label">🌐</span>
+    <button class="lang-btn active" onclick="setLang('en',this)">English</button>
+    <button class="lang-btn" onclick="setLang('hi',this)">हिंदी</button>
+    <button class="lang-btn" onclick="setLang('te',this)">తెలుగు</button>
+    <button class="lang-btn" onclick="setLang('mr',this)">मराठी</button>
+  </div>
+  <div class="main">
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step-dot active" id="sd1">1</div>
+      <div class="step-line" id="sl1"></div>
+      <div class="step-dot" id="sd2">2</div>
+      <div class="step-line" id="sl2"></div>
+      <div class="step-dot" id="sd3">3</div>
+    </div>
+
+    <!-- Step 1: Medical conditions -->
+    <div id="ob-step1">
+      <div class="page-head">
+        <h1 data-i18n="medical_conditions">Medical conditions</h1>
+        <p data-i18n="ob1_sub">Tell us about your health so we can help you better</p>
+      </div>
+      <div class="card">
+        <div class="form-group">
+          <label class="form-label" data-i18n="age_lbl">Age</label>
+          <input class="form-input" id="p-age" placeholder="e.g. 68" type="number"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="conditions_lbl">Diagnosed conditions</label>
+          <input class="form-input" id="p-cond" placeholder="e.g. Hypertension, Diabetes Type 2"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="allergies_lbl">Allergies (if any)</label>
+          <input class="form-input" id="p-allergy" placeholder="e.g. Penicillin"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="doctor_lbl">Doctor name</label>
+          <input class="form-input" id="p-doctor" placeholder="Dr. Ramesh Kumar"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="caretaker_ph_lbl">Emergency contact (caretaker phone)</label>
+          <input class="form-input" id="p-caretaker-ph" placeholder="+91 XXXXX XXXXX" type="tel"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="family_ph_lbl">Family contact phone</label>
+          <input class="form-input" id="p-family-ph" placeholder="+91 XXXXX XXXXX" type="tel"/>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="obNext(2)" data-i18n="next_meds">Next: Add medications →</button>
+    </div>
+
+    <!-- Step 2: Medications -->
+    <div id="ob-step2" class="hidden">
+      <div class="page-head">
+        <h1 data-i18n="your_medications">Your medications</h1>
+        <p data-i18n="ob2_sub">Add each tablet or medication you take daily</p>
+      </div>
+      <div id="med-list"></div>
+      <div class="card" style="border-style:dashed">
+        <div class="card-title" data-i18n="add_new_med">Add new medication</div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="med_name_lbl">Medication name</label>
+          <input class="form-input" id="m-name" placeholder="e.g. Amlodipine 5mg"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" data-i18n="dosage_lbl">Dosage</label>
+            <input class="form-input" id="m-dose" placeholder="1 tablet"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="meal_lbl">Before / After meals</label>
+            <select class="form-input form-select" id="m-meal">
+              <option data-i18n-meal="before">Before meals</option>
+              <option data-i18n-meal="after">After meals</option>
+              <option data-i18n-meal="with">With meals</option>
+              <option data-i18n-meal="any">Anytime</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" data-i18n="count_lbl">🔢 Total tablet count</label>
+            <input class="form-input" id="m-count" placeholder="e.g. 30" type="number" min="1" value="30"/>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" data-i18n="expiry_lbl">📅 Expiry date</label>
+            <input class="form-input" id="m-expiry" type="month"/>
+          </div>
+        </div>
+        <div style="height:14px"></div>
+        <button class="btn btn-secondary" style="margin-bottom:0" onclick="addMed()" data-i18n="add_med_btn">+ Add medication</button>
+      </div>
+      <div class="flex" style="gap:10px;margin-top:8px">
+        <button class="btn btn-secondary" onclick="obNext(1)" style="flex:0.4" data-i18n="back_btn">← Back</button>
+        <button class="btn btn-primary" onclick="obNext(3)" data-i18n="next_timings">Next: Set timings →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Timings -->
+    <div id="ob-step3" class="hidden">
+      <div class="page-head">
+        <h1 data-i18n="set_schedule">Set your schedule</h1>
+        <p data-i18n="ob3_sub">Pick when you take each medication. We'll send you reminders.</p>
+      </div>
+      <div id="timing-list"></div>
+      <div class="card">
+        <div class="card-title" data-i18n="notif_pref">Notification preference</div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="breakfast_lbl">Breakfast reminder time</label>
+          <input class="form-input" id="t-breakfast" type="time" value="08:00"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="lunch_lbl">Lunch reminder time</label>
+          <input class="form-input" id="t-lunch" type="time" value="13:00"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="dinner_lbl">Dinner reminder time</label>
+          <input class="form-input" id="t-dinner" type="time" value="20:00"/>
+        </div>
+      </div>
+      <div class="flex" style="gap:10px;margin-top:8px">
+        <button class="btn btn-secondary" onclick="obNext(2)" style="flex:0.4" data-i18n="back_btn">← Back</button>
+        <button class="btn btn-primary" onclick="finishOnboarding()" data-i18n="finish_btn">Finish setup ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PATIENT DASHBOARD ===================== -->
+<div id="patient-dashboard" class="screen">
+  <div class="topbar">
+    <div class="logo">MediCare</div>
+    <div class="role-badge" data-i18n="role_patient">Patient</div>
+  </div>
+  <div class="lang-bar">
+    <span class="lang-bar-label">🌐</span>
+    <button class="lang-btn active" onclick="setLang('en',this)">English</button>
+    <button class="lang-btn" onclick="setLang('hi',this)">हिंदी</button>
+    <button class="lang-btn" onclick="setLang('te',this)">తెలుగు</button>
+    <button class="lang-btn" onclick="setLang('mr',this)">मराठी</button>
+  </div>
+  <div class="main" style="padding-bottom:16px">
+
+    <!-- Inventory alerts -->
+    <div id="pt-inventory-alerts"></div>
+
+    <!-- Today's summary -->
+    <div class="page-head" style="margin-bottom:16px">
+      <h1 id="pt-greeting">Good morning, <span id="pt-name-disp">Ravi</span></h1>
+      <p id="pt-date-disp" class="text-muted"></p>
+    </div>
+
+    <div class="card flex-between">
+      <div>
+        <div class="card-title" data-i18n="todays_adherence">Today's adherence</div>
+        <div style="font-size:28px;font-weight:700" id="pt-pct">0%</div>
+        <div class="text-muted" id="pt-taken-count">0 of 0 taken</div>
+      </div>
+      <div class="progress-wrap">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="32" fill="none" stroke="#30363d" stroke-width="8"/>
+          <circle id="progress-circle" cx="40" cy="40" r="32" fill="none" stroke="#3fb950" stroke-width="8"
+            stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" style="transition:stroke-dashoffset 0.6s"/>
+        </svg>
+        <div class="progress-val" id="progress-val-txt">0%</div>
+      </div>
+    </div>
+
+    <!-- Today's schedule -->
+    <div class="card">
+      <div class="card-title" data-i18n="todays_schedule">Today's schedule</div>
+      <div id="today-schedule"></div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:12px">
+        <div class="card-title" style="margin-bottom:0" data-i18n="this_month">This month</div>
+        <div class="flex gap-8" style="font-size:11px;gap:8px">
+          <span><span style="color:var(--accent)">●</span> <span data-i18n="taken">Taken</span></span>
+          <span><span style="color:var(--danger)">●</span> <span data-i18n="missed">Missed</span></span>
+          <span><span style="color:var(--warn)">●</span> <span data-i18n="refused">Refused</span></span>
+        </div>
+      </div>
+      <div class="cal-grid" id="patient-cal"></div>
+    </div>
+
+    <!-- Medication Inventory Card -->
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0" data-i18n="med_inventory">💊 Medication inventory</div>
+        <span style="font-size:11px;color:var(--muted)" data-i18n="tap_update">Tap to update stock</span>
+      </div>
+      <div id="pt-med-inventory"></div>
+    </div>
+
+    <div style="height:12px"></div>
+    <button class="btn btn-secondary" onclick="showLogout()" data-i18n="signout">Sign out</button>
+  </div>
+</div>
+
+<!-- ===================== CARETAKER DASHBOARD ===================== -->
+<div id="caretaker-dashboard" class="screen">
+  <div class="topbar">
+    <div class="logo">MediCare</div>
+    <div class="role-badge" data-i18n="role_caretaker">Caretaker</div>
+  </div>
+  <div class="lang-bar">
+    <span class="lang-bar-label">🌐</span>
+    <button class="lang-btn active" onclick="setLang('en',this)">English</button>
+    <button class="lang-btn" onclick="setLang('hi',this)">हिंदी</button>
+    <button class="lang-btn" onclick="setLang('te',this)">తెలుగు</button>
+    <button class="lang-btn" onclick="setLang('mr',this)">मराठी</button>
+  </div>
+  <div class="main" style="padding-bottom:16px">
+    <div class="page-head">
+      <h1 data-i18n="ct_panel">Caretaker panel</h1>
+      <p class="text-muted"><span data-i18n="managing">Managing:</span> <span id="ct-patient-name" class="text-accent fw-600">Ravi Kumar</span></p>
+    </div>
+
+    <div id="ct-alert-zone"></div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="ctTab('today',this)" data-i18n="today_tab">Today</button>
+      <button class="tab" onclick="ctTab('calendar',this)" data-i18n="calendar_tab">Calendar</button>
+      <button class="tab" onclick="ctTab('log',this)" data-i18n="log_tab">Action log</button>
+    </div>
+
+    <!-- Today tab -->
+    <div id="ct-today">
+      <div class="card">
+        <div class="card-title" data-i18n="patient_status">Patient status</div>
+        <div id="ct-schedule"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" data-i18n="log_action">Log an action</div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="called_at">I called the patient at</label>
+          <input class="form-input" id="ct-call-time" type="time"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="outcome_lbl">Outcome</label>
+          <select class="form-input form-select" id="ct-outcome">
+            <option value="answered-yes" data-i18n="outcome_ans_yes">Patient answered — will take medication</option>
+            <option value="answered-no" data-i18n="outcome_ans_no">Patient answered — refused</option>
+            <option value="no-answer" data-i18n="outcome_no_ans">No answer — heading to their house</option>
+            <option value="visited-yes" data-i18n="outcome_vis_yes">Visited — medication taken</option>
+            <option value="visited-no" data-i18n="outcome_vis_no">Visited — patient still refused</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="ctLogAction()" data-i18n="log_btn">Log this action</button>
+      </div>
+    </div>
+
+    <!-- Calendar tab -->
+    <div id="ct-calendar" class="hidden">
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:12px">
+          <div class="card-title" style="margin-bottom:0" data-i18n="patients_month">Patient's month</div>
+          <div class="flex gap-8" style="font-size:11px;gap:8px">
+            <span><span style="color:var(--accent)">●</span> <span data-i18n="taken">Taken</span></span>
+            <span><span style="color:var(--danger)">●</span> <span data-i18n="missed">Missed</span></span>
+            <span><span style="color:var(--warn)">●</span> <span data-i18n="refused">Refused</span></span>
+          </div>
+        </div>
+        <div class="cal-grid" id="ct-cal"></div>
+      </div>
+    </div>
+
+    <!-- Log tab -->
+    <div id="ct-log" class="hidden">
+      <div class="card">
+        <div class="card-title" data-i18n="action_history">Action history</div>
+        <div id="ct-log-list"></div>
+      </div>
+    </div>
+
+    <div style="height:12px"></div>
+    <button class="btn btn-secondary" onclick="showLogout()" data-i18n="signout">Sign out</button>
+  </div>
+</div>
+
+<!-- ===================== FAMILY DASHBOARD ===================== -->
+<div id="family-dashboard" class="screen">
+  <div class="topbar">
+    <div class="logo">MediCare</div>
+    <div class="role-badge" data-i18n="role_family">Family</div>
+  </div>
+  <div class="lang-bar">
+    <span class="lang-bar-label">🌐</span>
+    <button class="lang-btn active" onclick="setLang('en',this)">English</button>
+    <button class="lang-btn" onclick="setLang('hi',this)">हिंदी</button>
+    <button class="lang-btn" onclick="setLang('te',this)">తెలుగు</button>
+    <button class="lang-btn" onclick="setLang('mr',this)">मराठी</button>
+  </div>
+  <div class="main" style="padding-bottom:16px">
+    <div class="page-head">
+      <h1 data-i18n="fam_overview">Family overview</h1>
+      <p class="text-muted"><span data-i18n="watching">Watching over:</span> <span id="fam-patient-name" class="text-accent fw-600">Ravi Kumar</span></p>
+    </div>
+
+    <div id="fam-alert-zone"></div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="famTab('today',this)" data-i18n="today_tab">Today</button>
+      <button class="tab" onclick="famTab('calendar',this)" data-i18n="calendar_tab">Calendar</button>
+      <button class="tab" onclick="famTab('log',this)" data-i18n="history_tab">History</button>
+      <button class="tab" onclick="famTab('inventory',this)" data-i18n="inventory_tab">Inventory</button>
+    </div>
+
+    <!-- Today tab -->
+    <div id="fam-today">
+      <div class="card">
+        <div class="card-title" data-i18n="todays_adherence_fam">Today's adherence</div>
+        <div id="fam-schedule"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" data-i18n="mark_action">Mark family action</div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="what_happened">What happened?</label>
+          <select class="form-input form-select" id="fam-action-select">
+            <option value="called-yes" data-i18n="fam_called_yes">I called — patient will take medication</option>
+            <option value="called-no" data-i18n="fam_called_no">I called — patient refused</option>
+            <option value="visited-yes" data-i18n="fam_visit_yes">I visited — medication taken</option>
+            <option value="visited-refused" data-i18n="fam_visit_ref">I visited — patient firmly refuses. Stop notifications.</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="famLogAction()" data-i18n="update_btn">Update status</button>
+      </div>
+    </div>
+
+    <!-- Calendar tab -->
+    <div id="fam-calendar" class="hidden">
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:12px">
+          <div class="card-title" style="margin-bottom:0" data-i18n="patients_month">Patient's month</div>
+          <div style="font-size:11px;gap:8px;display:flex">
+            <span><span style="color:var(--accent)">●</span> <span data-i18n="taken">Taken</span></span>
+            <span><span style="color:var(--danger)">●</span> <span data-i18n="missed">Missed</span></span>
+            <span><span style="color:var(--warn)">●</span> <span data-i18n="refused">Refused</span></span>
+          </div>
+        </div>
+        <div class="cal-grid" id="fam-cal"></div>
+      </div>
+    </div>
+
+    <!-- History tab -->
+    <div id="fam-log" class="hidden">
+      <div class="card">
+        <div class="card-title" data-i18n="full_history">Full history</div>
+        <div id="fam-log-list"></div>
+      </div>
+    </div>
+
+    <!-- Inventory tab -->
+    <div id="fam-inventory" class="hidden">
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:14px">
+          <div class="card-title" style="margin-bottom:0" data-i18n="med_inventory">💊 Medication inventory</div>
+          <span style="font-size:11px;color:var(--muted)" data-i18n="live_stock">Live stock view</span>
+        </div>
+        <div id="fam-inventory-list"></div>
+      </div>
+    </div>
+
+    <div style="height:12px"></div>
+    <button class="btn btn-secondary" onclick="showLogout()" data-i18n="signout">Sign out</button>
+  </div>
+</div>
+
+<!-- ===================== NOTIFICATION POPUP ===================== -->
+<div class="notif-overlay" id="notif-overlay">
+  <div class="notif-box">
+    <div class="notif-icon" id="notif-icon">💊</div>
+    <div class="notif-title" id="notif-title" data-i18n="notif_title_med">Medication reminder</div>
+    <div class="notif-msg" id="notif-msg">Did you take your morning medication?</div>
+    <!-- Voice Note Button -->
+    <div style="margin-bottom:18px;display:flex;justify-content:center">
+      <button class="voice-btn" id="voice-notif-btn" onclick="speakReminder()">
+        <span id="voice-btn-icon">🔊</span>
+        <span id="voice-btn-text" data-i18n="hear_reminder">Hear this reminder</span>
+        <span class="voice-wave" id="voice-wave" style="display:none">
+          <span></span><span></span><span></span><span></span><span></span>
+        </span>
+      </button>
+    </div>
+    <div class="notif-actions" id="notif-actions">
+      <button class="btn btn-danger" id="notif-no-btn" onclick="respondNotif('no')" data-i18n="no_btn">No</button>
+      <button class="btn btn-primary" id="notif-yes-btn" onclick="respondNotif('yes')" data-i18n="yes_took">Yes, I took it ✓</button>
+    </div>
+    <div class="notif-countdown" id="notif-countdown" data-i18n="please_respond">Please respond within 15 minutes</div>
+  </div>
+</div>
+
+<!-- ===================== CARETAKER ALERT ===================== -->
+<div class="notif-overlay" id="ct-notif-overlay">
+  <div class="notif-box">
+    <div class="notif-icon">🧑‍⚕️</div>
+    <div class="notif-title" data-i18n="ct_alert_title">Patient needs attention</div>
+    <div class="notif-msg" id="ct-notif-msg">Ravi has not responded to medication reminders for 30 minutes. Please call them.</div>
+    <div class="notif-actions">
+      <button class="btn btn-primary" onclick="closeCTNotif()" data-i18n="ill_handle">I'll handle it →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== FAMILY ALERT ===================== -->
+<div class="notif-overlay" id="fam-notif-overlay">
+  <div class="notif-box">
+    <div class="notif-icon">👨‍👩‍👧</div>
+    <div class="notif-title" data-i18n="fam_alert_title">Family alert</div>
+    <div class="notif-msg" id="fam-notif-msg">Ravi has not taken their medication and the caretaker needs your help. Please call or visit.</div>
+    <div class="notif-actions">
+      <button class="btn btn-primary" onclick="closeFamNotif()" data-i18n="acknowledged">Acknowledged →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== FAMILY INVENTORY ALERT ===================== -->
+<div class="notif-overlay" id="fam-inventory-overlay">
+  <div class="notif-box">
+    <div class="notif-icon">📦</div>
+    <div class="notif-title" id="fam-inv-title" data-i18n="inv_alert_title">Medication supply low</div>
+    <div class="notif-msg" id="fam-inv-msg">Some medications are running low and need to be refilled soon.</div>
+    <div style="max-height:200px;overflow-y:auto;margin-bottom:18px" id="fam-inv-detail"></div>
+    <div class="notif-actions">
+      <button class="btn btn-primary" onclick="document.getElementById('fam-inventory-overlay').classList.remove('show')" data-i18n="arrange_refill">I'll arrange a refill →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SCRIPTS ===================== -->
+<script>
+// ============ GLOBAL STATE ============
+let state = {
+  role: null,
+  name: '',
+  phone: '',
+  patientId: 'PAT-001',
+  lang: 'en',
+
+  // Patient data
+  conditions: '', allergies: '', doctor: '',
+  caretakerPhone: '', familyPhone: '', age: '',
+
+  medications: [],
+  scheduleTimings: { breakfast: '08:00', lunch: '13:00', dinner: '20:00' },
+
+  // Logs & calendar
+  calendarData: {}, // { 'YYYY-MM-DD': 'taken'|'missed'|'refused' }
+  actionLog: [],
+
+  // Notification flow state
+  notifPaused: false,
+  currentMedNotif: null,
+  notifPhase: 0, // 0=patient, 1=caretaker, 2=family
+  remindCount: 0,
+  notifTimers: [],
+  todaySchedule: [], // [{medId, name, time, meal, dose, status:'pending'|'taken'|'missed'|'refused'}]
+};
+
+// ============ HELPERS ============
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function fmt(d) {
+  return new Date(d).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+}
+
+function fmtTime(t) {
+  const [h,m] = t.split(':');
+  const hr = parseInt(h);
+  return `${hr > 12 ? hr-12 : hr}:${m} ${hr >= 12 ? 'PM' : 'AM'}`;
+}
+
+function now() { return new Date(); }
+function todayKey() { return now().toISOString().split('T')[0]; }
+
+function addLog(msg, actor) {
+  const time = now().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+  state.actionLog.unshift({ time, msg, actor: actor || 'System' });
+}
+
+function clearTimers() {
+  state.notifTimers.forEach(t => clearTimeout(t));
+  state.notifTimers = [];
+}
+
+// ============ LOGIN ============
+function selectRole(role, el) {
+  state.role = role;
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const lf = document.getElementById('patient-link-field');
+  lf.classList.toggle('hidden', role === 'patient');
+}
+
+function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  const phone = document.getElementById('login-phone').value.trim();
+  if (!name || !state.role) { alert('Please enter your name and select your role.'); return; }
+  state.name = name;
+  state.phone = phone;
+
+  if (state.role === 'patient') {
+    show('patient-onboard-screen');
+    obStep(1);
+  } else if (state.role === 'caretaker') {
+    loadCaretakerDash();
+    show('caretaker-dashboard');
+  } else {
+    loadFamilyDash();
+    show('family-dashboard');
+  }
+}
+
+// ============ PATIENT ONBOARDING ============
+let obStepNum = 1;
+function obStep(n) {
+  obStepNum = n;
+  [1,2,3].forEach(i => {
+    document.getElementById('ob-step'+i).classList.toggle('hidden', i !== n);
+    const dot = document.getElementById('sd'+i);
+    dot.classList.toggle('done', i < n);
+    dot.classList.toggle('active', i === n);
+    if (i < 3) document.getElementById('sl'+i).classList.toggle('done', i < n);
+  });
+}
+function obNext(n) {
+  if (n === 2 && !document.getElementById('p-cond').value.trim()) {
+    alert('Please enter at least one medical condition.'); return;
+  }
+  if (n === 3 && state.medications.length === 0) {
+    alert('Please add at least one medication.'); return;
+  }
+  obStep(n);
+  if (n === 3) renderTimingSetup();
+}
+
+// Medication management
+function addMed() {
+  const name = document.getElementById('m-name').value.trim();
+  const dose = document.getElementById('m-dose').value.trim() || '1 tablet';
+  const meal = document.getElementById('m-meal').value;
+  const count = parseInt(document.getElementById('m-count').value) || 30;
+  const expiry = document.getElementById('m-expiry').value || '';
+  if (!name) { alert('Please enter medication name.'); return; }
+  const id = 'med_' + Date.now();
+  state.medications.push({ id, name, dose, meal, time: '08:00', totalCount: count, currentCount: count, expiry });
+  document.getElementById('m-name').value = '';
+  document.getElementById('m-dose').value = '';
+  document.getElementById('m-count').value = '30';
+  document.getElementById('m-expiry').value = '';
+  renderMedList();
+}
+
+function removeMed(id) {
+  state.medications = state.medications.filter(m => m.id !== id);
+  renderMedList();
+}
+
+function getExpiryInfo(expiry) {
+  if (!expiry) return { label: 'No expiry set', cls: 'expiry-ok', daysLeft: 9999 };
+  const exp = new Date(expiry + '-01');
+  exp.setMonth(exp.getMonth() + 1); exp.setDate(0); // Last day of that month
+  const today = new Date(); today.setHours(0,0,0,0);
+  const daysLeft = Math.ceil((exp - today) / (1000*60*60*24));
+  if (daysLeft < 0) return { label: 'EXPIRED', cls: 'expiry-expired', daysLeft };
+  if (daysLeft <= 7) return { label: `Expires in ${daysLeft}d ⚠️`, cls: 'expiry-urgent', daysLeft };
+  if (daysLeft <= 30) return { label: `Expires in ${daysLeft}d`, cls: 'expiry-soon', daysLeft };
+  return { label: `Exp: ${expiry}`, cls: 'expiry-ok', daysLeft };
+}
+
+function getStockInfo(m) {
+  const pct = Math.round((m.currentCount / (m.totalCount || 30)) * 100);
+  const days = m.currentCount;
+  if (m.currentCount <= 0) return { cls: 'critical', barColor: 'var(--danger)', pct: 0, label: 'Out of stock!' };
+  if (m.currentCount <= 5) return { cls: 'critical', barColor: 'var(--danger)', pct, label: `${m.currentCount} left — CRITICAL` };
+  if (m.currentCount <= 10) return { cls: 'low', barColor: 'var(--warn)', pct, label: `${m.currentCount} tablets left` };
+  return { cls: 'ok', barColor: 'var(--accent)', pct, label: `${m.currentCount} tablets left` };
+}
+
+function renderMedList() {
+  const c = document.getElementById('med-list');
+  if (!state.medications.length) {
+    c.innerHTML = '<p class="text-muted" style="text-align:center;padding:16px">No medications added yet</p>';
+    return;
+  }
+  c.innerHTML = state.medications.map(m => {
+    const exp = getExpiryInfo(m.expiry);
+    const stock = getStockInfo(m);
+    return `
+    <div class="med-item-enhanced">
+      <div class="med-top">
+        <div class="med-icon">💊</div>
+        <div class="med-info">
+          <div class="med-name">${m.name}</div>
+          <div class="med-meta">${m.dose} · ${m.meal}</div>
+          <span class="expiry-badge ${exp.cls}">${exp.label}</span>
+        </div>
+        <div class="med-remove" onclick="removeMed('${m.id}')">✕</div>
+      </div>
+      <div class="pill-stats">
+        <div class="pill-stat-box ${stock.cls}">
+          <div class="pill-stat-val">${m.currentCount ?? m.totalCount ?? '—'}</div>
+          <div class="pill-stat-label">Tablets left</div>
+          <div class="stock-bar-wrap"><div class="stock-bar" style="width:${stock.pct}%;background:${stock.barColor}"></div></div>
+        </div>
+        <div class="pill-stat-box">
+          <div class="pill-stat-val">${m.totalCount ?? '—'}</div>
+          <div class="pill-stat-label">Total supply</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTimingSetup() {
+  const c = document.getElementById('timing-list');
+  c.innerHTML = state.medications.map(m => `
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:10px">
+        <div class="fw-600">💊 ${m.name}</div>
+        <div class="text-muted" style="font-size:12px">${m.meal}</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Time</label>
+          <input class="form-input" type="time" value="${m.time}" onchange="updateMedTime('${m.id}',this.value)"/>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Frequency</label>
+          <select class="form-input form-select" onchange="updateMedFreq('${m.id}',this.value)">
+            <option>Once daily</option>
+            <option>Twice daily</option>
+            <option>With meals</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateMedTime(id, val) { state.medications.find(m=>m.id===id).time = val; }
+function updateMedFreq(id, val) { state.medications.find(m=>m.id===id).freq = val; }
+
+function finishOnboarding() {
+  state.conditions = document.getElementById('p-cond').value;
+  state.allergies = document.getElementById('p-allergy').value;
+  state.doctor = document.getElementById('p-doctor').value;
+  state.caretakerPhone = document.getElementById('p-caretaker-ph').value;
+  state.familyPhone = document.getElementById('p-family-ph').value;
+  state.age = document.getElementById('p-age').value;
+  state.scheduleTimings.breakfast = document.getElementById('t-breakfast').value;
+  state.scheduleTimings.lunch = document.getElementById('t-lunch').value;
+  state.scheduleTimings.dinner = document.getElementById('t-dinner').value;
+
+  // Build today's schedule
+  buildTodaySchedule();
+  loadPatientDash();
+  show('patient-dashboard');
+  addLog('Patient setup completed', 'System');
+
+  // Start demo notification cycle after 4 seconds
+  setTimeout(() => triggerMedNotif(state.todaySchedule[0]), 4000);
+}
+
+// ============ TODAY'S SCHEDULE ============
+function buildTodaySchedule() {
+  state.todaySchedule = state.medications.map(m => ({
+    medId: m.id, name: m.name, time: m.time, meal: m.meal, dose: m.dose,
+    status: 'pending'
+  }));
+}
+
+// ============ PATIENT DASHBOARD ============
+function loadPatientDash() {
+  const h = now().getHours();
+  const greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  document.getElementById('pt-greeting').innerHTML = `${greet}, <span id="pt-name-disp">${state.name}</span>`;
+  document.getElementById('pt-date-disp').textContent = now().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+  renderPatientProgress();
+  renderTodaySchedule();
+  renderCal('patient-cal');
+  renderInventoryCard();
+  renderInventoryAlerts();
+}
+
+function renderPatientProgress() {
+  const total = state.todaySchedule.length || 1;
+  const taken = state.todaySchedule.filter(s=>s.status==='taken').length;
+  const pct = Math.round((taken/total)*100);
+  document.getElementById('pt-pct').textContent = pct+'%';
+  document.getElementById('pt-taken-count').textContent = `${taken} of ${total} taken`;
+  document.getElementById('progress-val-txt').textContent = pct+'%';
+  const circle = document.getElementById('progress-circle');
+  const dash = 201;
+  circle.style.strokeDashoffset = dash - (dash * pct / 100);
+  const todayKey_ = todayKey();
+  if (pct === 100) { state.calendarData[todayKey_] = 'taken'; }
+  else if (state.todaySchedule.some(s=>s.status==='refused')) { state.calendarData[todayKey_] = 'refused'; }
+  else if (state.todaySchedule.some(s=>s.status==='missed')) { state.calendarData[todayKey_] = 'missed'; }
+}
+
+function renderTodaySchedule() {
+  const c = document.getElementById('today-schedule');
+  if (!state.todaySchedule.length) { c.innerHTML = `<p class="text-muted">${t('no_schedule')}</p>`; return; }
+  c.innerHTML = state.todaySchedule.map(s => {
+    const icon = s.status==='taken' ? '✅' : s.status==='missed' ? '❌' : s.status==='refused' ? '⛔' : '⏳';
+    const chipC = s.status==='taken' ? 'chip-green' : s.status==='missed' ? 'chip-red' : s.status==='refused' ? 'chip-yellow' : 'chip-blue';
+    const statusLabel = t(s.status) || (s.status.charAt(0).toUpperCase()+s.status.slice(1));
+    return `
+    <div class="sched-item">
+      <div class="sched-time">${fmtTime(s.time)}</div>
+      <div class="sched-info">
+        <div class="sched-name">${s.name}</div>
+        <div class="sched-detail">${s.dose} · ${s.meal}</div>
+      </div>
+      <span class="chip ${chipC}">${statusLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+// ============ CALENDAR ============
+function renderCal(containerId) {
+  const c = document.getElementById(containerId);
+  const today = now();
+  const year = today.getFullYear(), month = today.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  let html = '';
+  for (let i=0; i<firstDay; i++) html += '<div class="cal-day empty">·</div>';
+  for (let d=1; d<=daysInMonth; d++) {
+    const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const status = state.calendarData[key] || '';
+    const isToday = d === today.getDate();
+    html += `<div class="cal-day ${status} ${isToday?'today':''}" title="${key}">${d}</div>`;
+  }
+  c.innerHTML = html;
+}
+
+// ============ NOTIFICATION FLOW ============
+function triggerMedNotif(sched) {
+  if (!sched || state.notifPaused) return;
+  state.currentMedNotif = sched;
+  state.notifPhase = 0;
+  state.remindCount = 0;
+  showPatientNotif(sched);
+}
+
+function showPatientNotif(sched) {
+  if (state.notifPaused) return;
+  const o = document.getElementById('notif-overlay');
+  document.getElementById('notif-icon').textContent = '💊';
+  document.getElementById('notif-title').textContent = `Time for your medication`;
+  document.getElementById('notif-msg').textContent = `Did you take your ${sched.name} (${sched.dose})? It should be taken ${sched.meal.toLowerCase()}.`;
+  document.getElementById('notif-no-btn').style.display = '';
+  document.getElementById('notif-yes-btn').style.display = '';
+  document.getElementById('notif-countdown').textContent = 'Please respond within 15 minutes';
+  o.classList.add('show');
+  addLog(`Reminder sent to patient: "${sched.name}"`, 'System');
+  // Auto-speak the voice reminder for elderly users
+  setTimeout(() => speakReminder(), 600);
+
+  // Auto-escalate after 8s (demo = 8s, real = 15min)
+  clearTimers();
+  const t = setTimeout(() => {
+    if (!state.notifPaused) {
+      o.classList.remove('show');
+      state.remindCount++;
+      if (state.remindCount < 3) {
+        addLog(`Patient did not respond. Sending reminder ${state.remindCount+1}...`, 'System');
+        const t2 = setTimeout(() => showPatientNotif(sched), 1500);
+        state.notifTimers.push(t2);
+      } else {
+        escalateToCaretaker(sched);
+      }
+    }
+  }, 8000);
+  state.notifTimers.push(t);
+}
+
+function respondNotif(ans) {
+  clearTimers();
+  const o = document.getElementById('notif-overlay');
+  const sched = state.currentMedNotif;
+  if (ans === 'yes') {
+    o.classList.remove('show');
+    markMedStatus(sched, 'taken');
+    addLog(`Patient confirmed: "${sched.name}" taken`, 'Patient');
+    // Schedule next med if any
+    const idx = state.todaySchedule.indexOf(sched);
+    const next = state.todaySchedule[idx+1];
+    if (next && next.status === 'pending') {
+      const t = setTimeout(() => triggerMedNotif(next), 5000);
+      state.notifTimers.push(t);
+    }
+  } else {
+    state.remindCount++;
+    o.classList.remove('show');
+    addLog(`Patient said NO to "${sched.name}"`, 'Patient');
+    if (state.remindCount < 3) {
+      const t = setTimeout(() => showPatientNotif(sched), 2000);
+      state.notifTimers.push(t);
+    } else {
+      escalateToCaretaker(sched);
+    }
+  }
+}
+
+function escalateToCaretaker(sched) {
+  addLog(`Escalating to caretaker — patient unresponsive for "${sched.name}"`, 'System');
+  markMedStatus(sched, 'missed');
+  const m = document.getElementById('ct-notif-msg');
+  m.textContent = `${state.name} has not responded to medication reminders for "${sched.name}". Please call them now.`;
+  document.getElementById('ct-notif-overlay').classList.add('show');
+  // update caretaker dashboard alert
+  updateCTAlert(`🚨 ${state.name} missed "${sched.name}". Call the patient immediately.`, 'danger');
+  // Escalate to family after 10s (demo)
+  const t = setTimeout(() => escalateToFamily(sched), 10000);
+  state.notifTimers.push(t);
+}
+
+function closeCTNotif() {
+  document.getElementById('ct-notif-overlay').classList.remove('show');
+  addLog(`Caretaker acknowledged the alert`, 'Caretaker');
+}
+
+function escalateToFamily(sched) {
+  addLog(`Escalating to family — caretaker has not resolved "${sched.name}"`, 'System');
+  const m = document.getElementById('fam-notif-msg');
+  m.textContent = `${state.name} has not taken "${sched.name}" and needs your attention. Please call or visit.`;
+  document.getElementById('fam-notif-overlay').classList.add('show');
+  updateFamAlert(`⚠️ ${state.name} still hasn't taken "${sched.name}". Family action required.`, 'warn');
+}
+
+function closeFamNotif() {
+  document.getElementById('fam-notif-overlay').classList.remove('show');
+  addLog(`Family acknowledged the alert`, 'Family');
+}
+
+function markMedStatus(sched, status) {
+  const found = state.todaySchedule.find(s=>s.medId===sched.medId);
+  if (found) found.status = status;
+  // Decrement tablet count when taken
+  if (status === 'taken') {
+    const med = state.medications.find(m=>m.id===sched.medId);
+    if (med && med.currentCount > 0) {
+      med.currentCount--;
+      // Check if critically low → alert family
+      checkInventoryAlerts(med);
+    }
+  }
+  renderPatientProgress();
+  renderTodaySchedule();
+  renderCal('patient-cal');
+  renderCal('ct-cal');
+  renderCal('fam-cal');
+  refreshCTSchedule();
+  refreshFamSchedule();
+  renderInventoryCard();
+  renderInventoryAlerts();
+}
+
+// ============ CARETAKER DASHBOARD ============
+function loadCaretakerDash() {
+  // Seed demo data
+  if (state.todaySchedule.length === 0) seedDemoData();
+  refreshCTSchedule();
+  renderCal('ct-cal');
+  renderCTLog();
+}
+
+function ctTab(tab, el) {
+  ['today','calendar','log'].forEach(t => {
+    document.getElementById('ct-'+t).classList.toggle('hidden', t!==tab);
+  });
+  document.querySelectorAll('#caretaker-dashboard .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if (tab==='calendar') renderCal('ct-cal');
+  if (tab==='log') renderCTLog();
+}
+
+function refreshCTSchedule() {
+  const c = document.getElementById('ct-schedule');
+  if (!state.todaySchedule.length) { c.innerHTML=`<p class="text-muted">${t('no_schedule')}</p>`; return; }
+  c.innerHTML = state.todaySchedule.map(s=>{
+    const chipC = s.status==='taken'?'chip-green':s.status==='missed'?'chip-red':s.status==='refused'?'chip-yellow':'chip-blue';
+    const statusLabel = t(s.status) || (s.status.charAt(0).toUpperCase()+s.status.slice(1));
+    return `<div class="sched-item">
+      <div class="sched-time">${fmtTime(s.time)}</div>
+      <div class="sched-info"><div class="sched-name">${s.name}</div><div class="sched-detail">${s.dose} · ${s.meal}</div></div>
+      <span class="chip ${chipC}">${statusLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+function ctLogAction() {
+  const time = document.getElementById('ct-call-time').value || 'Now';
+  const outcome = document.getElementById('ct-outcome').value;
+  const msgs = {
+    'answered-yes': 'Caretaker called — patient will take medication',
+    'answered-no': 'Caretaker called — patient refused',
+    'no-answer': 'Caretaker: no answer, heading to house',
+    'visited-yes': 'Caretaker visited — medication taken ✅',
+    'visited-no': 'Caretaker visited — patient still refused ⛔'
+  };
+  addLog(msgs[outcome]+` (at ${time})`, 'Caretaker');
+
+  if (outcome === 'visited-yes') {
+    const missed = state.todaySchedule.find(s=>s.status==='missed');
+    if (missed) markMedStatus(missed, 'taken');
+    updateCTAlert('✅ Patient has taken their medication. Well done!', 'success');
+  } else if (outcome === 'answered-no' || outcome === 'visited-no') {
+    updateCTAlert(`⛔ Patient has refused medication. Family has been alerted.`, 'warn');
+    updateFamAlert(`⛔ Patient refused medication after caretaker intervention. Please step in.`, 'danger');
+    document.getElementById('fam-notif-overlay').classList.add('show');
+  } else if (outcome === 'answered-yes') {
+    // Patient will take it — send reminder after 5s
+    clearTimers();
+    const t = setTimeout(() => {
+      const p = state.todaySchedule.find(s=>s.status==='missed'||s.status==='pending');
+      if (p) showPatientNotif(p);
+    }, 5000);
+    state.notifTimers.push(t);
+    updateCTAlert('⏳ Reminder sent back to patient after your call.', 'info');
+  }
+
+  renderCTLog();
+}
+
+function renderCTLog() {
+  const c = document.getElementById('ct-log-list');
+  if (!state.actionLog.length) { c.innerHTML=`<p class="text-muted">${t('no_actions')}</p>`; return; }
+  c.innerHTML = state.actionLog.map(l=>`
+    <div class="log-item">
+      <div class="log-time">${l.time}</div>
+      <div class="log-text"><span style="color:var(--accent2);font-weight:500">[${l.actor}]</span> ${l.msg}</div>
+    </div>`).join('');
+}
+
+function updateCTAlert(msg, type) {
+  const z = document.getElementById('ct-alert-zone');
+  const icons = {info:'ℹ️', warn:'⚠️', danger:'🚨', success:'✅'};
+  z.innerHTML = `<div class="alert-banner alert-${type}" style="margin-bottom:16px">${icons[type]} ${msg}</div>`;
+}
+
+// ============ FAMILY DASHBOARD ============
+
+function famTab(tab, el) {
+  ['today','calendar','log','inventory'].forEach(t => {
+    document.getElementById('fam-'+t).classList.toggle('hidden', t!==tab);
+  });
+  document.querySelectorAll('#family-dashboard .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  if (tab==='calendar') renderCal('fam-cal');
+  if (tab==='log') renderFamLog();
+  if (tab==='inventory') renderFamInventory();
+}
+
+function refreshFamSchedule() {
+  const c = document.getElementById('fam-schedule');
+  if (!state.todaySchedule.length) { c.innerHTML=`<p class="text-muted">${t('no_schedule')}</p>`; return; }
+  c.innerHTML = state.todaySchedule.map(s=>{
+    const chipC = s.status==='taken'?'chip-green':s.status==='missed'?'chip-red':s.status==='refused'?'chip-yellow':'chip-blue';
+    const statusLabel = t(s.status) || (s.status.charAt(0).toUpperCase()+s.status.slice(1));
+    return `<div class="sched-item">
+      <div class="sched-time">${fmtTime(s.time)}</div>
+      <div class="sched-info"><div class="sched-name">${s.name}</div><div class="sched-detail">${s.dose} · ${s.meal}</div></div>
+      <span class="chip ${chipC}">${statusLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+function famLogAction() {
+  const action = document.getElementById('fam-action-select').value;
+  const msgs = {
+    'called-yes': 'Family called — patient will take medication',
+    'called-no': 'Family called — patient refused medication',
+    'visited-yes': 'Family visited — medication taken ✅',
+    'visited-refused': 'Family visited — patient firmly refused. Notifications stopped. ⛔'
+  };
+  addLog(msgs[action], 'Family');
+
+  if (action === 'visited-yes' || action === 'called-yes') {
+    const missed = state.todaySchedule.find(s=>s.status!=='taken');
+    if (missed) {
+      if (action === 'visited-yes') {
+        markMedStatus(missed, 'taken');
+        state.calendarData[todayKey()] = 'taken';
+      } else {
+        // Patient will take it — send notification
+        clearTimers();
+        const t = setTimeout(() => showPatientNotif(missed), 4000);
+        state.notifTimers.push(t);
+      }
+    }
+    updateFamAlert('✅ Medication situation resolved. Good job!', 'success');
+    updateCTAlert('✅ Family has resolved the medication situation.', 'success');
+  } else if (action === 'called-no') {
+    updateFamAlert('⚠️ Patient refused on call. Please consider visiting.', 'warn');
+  } else if (action === 'visited-refused') {
+    // STOP all notifications
+    clearTimers();
+    state.notifPaused = true;
+    const missed = state.todaySchedule.find(s=>s.status!=='taken');
+    if (missed) markMedStatus(missed, 'refused');
+    state.calendarData[todayKey()] = 'refused';
+    renderCal('patient-cal'); renderCal('ct-cal'); renderCal('fam-cal');
+    updateFamAlert('⛔ Patient has firmly refused. All notifications stopped for today. Marked in calendar.', 'warn');
+    updateCTAlert('⛔ Family confirmed patient refusal. Notifications paused.', 'warn');
+    document.getElementById('notif-overlay').classList.remove('show');
+  }
+
+  renderFamLog();
+  refreshFamSchedule();
+}
+
+function updateFamAlert(msg, type) {
+  const z = document.getElementById('fam-alert-zone');
+  const icons = {info:'ℹ️', warn:'⚠️', danger:'🚨', success:'✅'};
+  z.innerHTML = `<div class="alert-banner alert-${type}" style="margin-bottom:16px">${icons[type]} ${msg}</div>`;
+}
+
+function renderFamLog() {
+  const c = document.getElementById('fam-log-list');
+  if (!state.actionLog.length) { c.innerHTML=`<p class="text-muted">${t('no_actions')}</p>`; return; }
+  c.innerHTML = state.actionLog.map(l=>`
+    <div class="log-item">
+      <div class="log-time">${l.time}</div>
+      <div class="log-text"><span style="color:var(--accent2);font-weight:500">[${l.actor}]</span> ${l.msg}</div>
+    </div>`).join('');
+}
+
+// ============ DEMO SEED DATA ============
+function seedDemoData() {
+  state.name = state.name || 'Ravi Kumar';
+  document.getElementById('ct-patient-name').textContent = state.name;
+  document.getElementById('fam-patient-name').textContent = state.name;
+
+  // Get next month and 3 months from now for expiry demo
+  const today = new Date();
+  const soon = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const future = new Date(today.getFullYear(), today.getMonth() + 4, 1);
+  const fmtMonth = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+
+  state.medications = [
+    { id:'m1', name:'Amlodipine 5mg',    dose:'1 tablet', meal:'After meals',  time:'08:00', totalCount:30, currentCount:6,  expiry: fmtMonth(future) },
+    { id:'m2', name:'Metformin 500mg',   dose:'1 tablet', meal:'After meals',  time:'13:00', totalCount:30, currentCount:3,  expiry: fmtMonth(soon)   },
+    { id:'m3', name:'Atorvastatin 10mg', dose:'1 tablet', meal:'Before meals', time:'20:00', totalCount:30, currentCount:25, expiry: fmtMonth(future) },
+  ];
+  state.todaySchedule = state.medications.map(m => ({
+    medId: m.id, name: m.name, time: m.time, meal: m.meal, dose: m.dose, status: 'pending'
+  }));
+  // Seed some calendar history
+  const tod = now();
+  for (let i=1; i<=tod.getDate()-1; i++) {
+    const d = new Date(tod.getFullYear(), tod.getMonth(), i);
+    const key = d.toISOString().split('T')[0];
+    const r = Math.random();
+    state.calendarData[key] = r > 0.8 ? 'missed' : r > 0.95 ? 'refused' : 'taken';
+  }
+}
+
+// ============ VOICE REMINDER (Web Speech API) ============
+let speechSynth = window.speechSynthesis;
+let currentUtterance = null;
+
+function speakReminder() {
+  const sched = state.currentMedNotif;
+  if (!sched) return;
+
+  const btn = document.getElementById('voice-notif-btn');
+  const wave = document.getElementById('voice-wave');
+  const icon = document.getElementById('voice-btn-icon');
+  const text = document.getElementById('voice-btn-text');
+
+  // If already speaking, stop
+  if (speechSynth.speaking) {
+    speechSynth.cancel();
+    btn.classList.remove('speaking');
+    wave.style.display = 'none';
+    icon.style.display = '';
+    text.textContent = 'Hear this reminder';
+    return;
+  }
+
+  const name = state.name ? state.name.split(' ')[0] : 'friend';
+  const hour = now().getHours();
+  const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+  const message = getVoiceMessage(sched);
+
+  const utt = new SpeechSynthesisUtterance(message);
+  utt.lang = getVoiceLang();
+  utt.rate = 0.82;   // Slower — easier for elderly
+  utt.pitch = 1.05;
+  utt.volume = 1;
+
+  // Pick a matching voice for the selected language
+  const voices = speechSynth.getVoices();
+  const voiceLang = getVoiceLang();
+  const preferred = voices.find(v => v.lang === voiceLang) ||
+                    voices.find(v => v.lang.startsWith(voiceLang.split('-')[0])) ||
+                    voices.find(v => v.lang === 'en-IN') ||
+                    voices.find(v => v.lang.startsWith('en'));
+  if (preferred) utt.voice = preferred;
+
+  utt.onstart = () => {
+    btn.classList.add('speaking');
+    icon.style.display = 'none';
+    wave.style.display = 'flex';
+    text.textContent = t('speaking_tap');
+  };
+  utt.onend = utt.onerror = () => {
+    btn.classList.remove('speaking');
+    wave.style.display = 'none';
+    icon.style.display = '';
+    text.textContent = t('hear_reminder');
+    currentUtterance = null;
+  };
+
+  currentUtterance = utt;
+  speechSynth.speak(utt);
+  addLog(`Voice reminder played for "${sched.name}"`, 'System');
+}
+
+function stopSpeech() {
+  if (speechSynth.speaking) speechSynth.cancel();
+}
+
+// Speak a general inventory alert aloud (for elderly patient awareness)
+function speakInventoryAlert(msg) {
+  if (speechSynth.speaking) speechSynth.cancel();
+  const utt = new SpeechSynthesisUtterance(msg);
+  utt.lang = 'en-IN';
+  utt.rate = 0.85;
+  utt.pitch = 1.0;
+  utt.volume = 1;
+  const voices = speechSynth.getVoices();
+  const pref = voices.find(v=>v.lang==='en-IN') || voices.find(v=>v.lang.startsWith('en'));
+  if (pref) utt.voice = pref;
+  speechSynth.speak(utt);
+}
+
+// ============ INVENTORY CARD (Patient Dashboard) ============
+function renderInventoryCard() {
+  const c = document.getElementById('pt-med-inventory');
+  if (!c) return;
+  if (!state.medications.length) {
+    c.innerHTML = `<p class="text-muted">${t('no_schedule')}</p>`;
+    return;
+  }
+  c.innerHTML = state.medications.map(m => {
+    const stock = getStockInfo(m);
+    const exp   = getExpiryInfo(m.expiry || '');
+    const pct   = Math.min(100, Math.round((m.currentCount / (m.totalCount || 30)) * 100));
+    return `
+    <div class="med-item-enhanced" style="margin-bottom:12px">
+      <div class="med-top">
+        <div class="med-icon">💊</div>
+        <div class="med-info" style="flex:1">
+          <div class="med-name">${m.name}</div>
+          <div class="med-meta">${m.dose} · ${m.meal}</div>
+          <span class="expiry-badge ${exp.cls}" style="margin-top:5px;display:inline-flex">${exp.label}</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="refillPrompt('${m.id}')" style="font-size:11px;padding:6px 10px">
+          ${t('refill_btn')}
+        </button>
+      </div>
+      <div class="pill-stats">
+        <div class="pill-stat-box ${stock.cls}">
+          <div class="pill-stat-val">${m.currentCount}</div>
+          <div class="pill-stat-label">${t('tablets_left')}</div>
+          <div class="stock-bar-wrap">
+            <div class="stock-bar" style="width:${pct}%;background:${stock.barColor}"></div>
+          </div>
+        </div>
+        <div class="pill-stat-box">
+          <div class="pill-stat-val" style="font-size:15px;color:var(--muted)">${m.totalCount ?? '—'}</div>
+          <div class="pill-stat-label">${t('full_pack')}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Refill prompt — lets patient update tablet count
+function refillPrompt(medId) {
+  const med = state.medications.find(m => m.id === medId);
+  if (!med) return;
+  const val = prompt(`Refill "${med.name}"\n\nHow many tablets did you just add?`, '30');
+  const add = parseInt(val);
+  if (isNaN(add) || add <= 0) return;
+  med.currentCount += add;
+  med.totalCount = Math.max(med.totalCount, med.currentCount);
+  addLog(`Refill: +${add} tablets added for "${med.name}" (now ${med.currentCount} remaining)`, 'Patient');
+  renderInventoryCard();
+  renderInventoryAlerts();
+  renderMedList();
+}
+
+// ============ INVENTORY ALERTS (top of patient dashboard) ============
+function renderInventoryAlerts() {
+  const c = document.getElementById('pt-inventory-alerts');
+  if (!c || !state.medications.length) return;
+
+  const alerts = [];
+
+  state.medications.forEach(m => {
+    // Low stock alerts
+    if (m.currentCount <= 0) {
+      alerts.push({ type:'danger', icon:'🚨', msg:`<strong>${m.name}</strong> is completely out of stock! Please arrange a refill immediately.` });
+    } else if (m.currentCount <= 5) {
+      alerts.push({ type:'danger', icon:'⚠️', msg:`<strong>${m.name}</strong> is critically low — only ${m.currentCount} tablet${m.currentCount===1?'':'s'} remaining. Refill urgently.` });
+    } else if (m.currentCount <= 10) {
+      alerts.push({ type:'warn', icon:'📦', msg:`<strong>${m.name}</strong> is running low — ${m.currentCount} tablets left. Please refill soon.` });
+    }
+
+    // Expiry alerts
+    if (m.expiry) {
+      const exp = getExpiryInfo(m.expiry);
+      if (exp.daysLeft < 0) {
+        alerts.push({ type:'danger', icon:'❌', msg:`<strong>${m.name}</strong> has <em>expired</em>. Do not take. Dispose safely and get a new prescription.` });
+      } else if (exp.daysLeft <= 7) {
+        alerts.push({ type:'danger', icon:'🗓️', msg:`<strong>${m.name}</strong> expires in just ${exp.daysLeft} day${exp.daysLeft===1?'':'s'}! Please renew your prescription now.` });
+      } else if (exp.daysLeft <= 30) {
+        alerts.push({ type:'warn', icon:'🗓️', msg:`<strong>${m.name}</strong> expires in ${exp.daysLeft} days. Plan a prescription renewal.` });
+      }
+    }
+  });
+
+  if (!alerts.length) { c.innerHTML = ''; return; }
+
+  c.innerHTML = alerts.map(a => `
+    <div class="inventory-alert inv-${a.type}">
+      <span style="font-size:18px;flex-shrink:0">${a.icon}</span>
+      <div class="inv-alert-msg">${a.msg}</div>
+    </div>`).join('');
+}
+
+// ============ CHECK INVENTORY & ALERT FAMILY ============
+function checkInventoryAlerts(med) {
+  const stockIssues  = [];
+  const expiryIssues = [];
+
+  state.medications.forEach(m => {
+    if (m.currentCount <= 5)  stockIssues.push(m);
+    if (m.expiry) {
+      const exp = getExpiryInfo(m.expiry);
+      if (exp.daysLeft >= 0 && exp.daysLeft <= 7) expiryIssues.push({ m, exp });
+    }
+  });
+
+  const shouldAlert = stockIssues.some(m=>m.id===med.id) || expiryIssues.some(x=>x.m.id===med.id);
+  if (!shouldAlert) return;
+
+  // Build alert detail HTML for family overlay
+  let detail = '';
+  stockIssues.forEach(m => {
+    const label = m.currentCount <= 0 ? '🚨 OUT OF STOCK' : `⚠️ Only ${m.currentCount} left`;
+    detail += `<div class="inventory-alert inv-${m.currentCount<=0?'danger':'warn'}" style="margin-bottom:8px">
+      <span>💊</span>
+      <div class="inv-alert-msg"><strong>${m.name}</strong> — ${label}</div>
+    </div>`;
+  });
+  expiryIssues.forEach(({m, exp}) => {
+    detail += `<div class="inventory-alert inv-${exp.daysLeft<=3?'danger':'warn'}" style="margin-bottom:8px">
+      <span>📅</span>
+      <div class="inv-alert-msg"><strong>${m.name}</strong> — expires in ${exp.daysLeft} day${exp.daysLeft===1?'':'s'}</div>
+    </div>`;
+  });
+
+  const allIssues = [...stockIssues.map(m=>m.name), ...expiryIssues.map(x=>x.m.name)];
+  const title = stockIssues.length && expiryIssues.length
+    ? '⚠️ Low stock & expiry warning'
+    : stockIssues.length ? '📦 Medication running low'
+    : '🗓️ Medication expiring soon';
+
+  document.getElementById('fam-inv-title').textContent = title;
+  document.getElementById('fam-inv-msg').textContent =
+    `${state.name || 'The patient'}'s medication supply needs your attention. Please arrange a refill or prescription renewal.`;
+  document.getElementById('fam-inv-detail').innerHTML = detail;
+  document.getElementById('fam-inventory-overlay').classList.add('show');
+
+  addLog(`Family alerted: inventory issue for "${allIssues.join(', ')}"`, 'System');
+  updateFamAlert(`📦 Medication supply alert: ${allIssues.join(', ')} need attention.`, 'warn');
+
+  // Also speak an alert for the patient
+  const voiceMsg = `Attention! Your ${med.name} supply is getting very low with only ${med.currentCount} tablets remaining. Please inform your family or caretaker to arrange a refill.`;
+  setTimeout(() => speakInventoryAlert(voiceMsg), 1200);
+}
+
+// ============ FAMILY DASHBOARD — Inventory Tab ============
+function loadFamilyDash() {
+  if (state.todaySchedule.length === 0) seedDemoData();
+  refreshFamSchedule();
+  renderCal('fam-cal');
+  renderFamLog();
+  renderFamInventory();
+  // Auto-check inventory on family load
+  checkFamInventoryOnLoad();
+}
+
+function checkFamInventoryOnLoad() {
+  const hasLowStock  = state.medications.some(m => m.currentCount <= 10);
+  const hasExpirySoon = state.medications.some(m => {
+    if (!m.expiry) return false;
+    return getExpiryInfo(m.expiry).daysLeft <= 30;
+  });
+  if (hasLowStock || hasExpirySoon) {
+    // Build and show the family inventory popup on login
+    const mock = state.medications.find(m=>m.currentCount<=10) || state.medications[0];
+    setTimeout(() => checkInventoryAlerts(mock), 1800);
+  }
+}
+
+function renderFamInventory() {
+  const c = document.getElementById('fam-inventory-list');
+  if (!c || !state.medications.length) return;
+  c.innerHTML = state.medications.map(m => {
+    const stock = getStockInfo(m);
+    const exp   = getExpiryInfo(m.expiry || '');
+    const pct   = Math.min(100, Math.round((m.currentCount / (m.totalCount || 30)) * 100));
+    return `
+    <div class="med-item-enhanced" style="margin-bottom:12px">
+      <div class="med-top">
+        <div class="med-icon">💊</div>
+        <div class="med-info">
+          <div class="med-name">${m.name}</div>
+          <div class="med-meta">${m.dose} · ${m.meal}</div>
+          <span class="expiry-badge ${exp.cls}" style="margin-top:4px;display:inline-flex">${exp.label}</span>
+        </div>
+      </div>
+      <div class="pill-stats">
+        <div class="pill-stat-box ${stock.cls}">
+          <div class="pill-stat-val">${m.currentCount}</div>
+          <div class="pill-stat-label">${t('tablets_left')}</div>
+          <div class="stock-bar-wrap">
+            <div class="stock-bar" style="width:${pct}%;background:${stock.barColor}"></div>
+          </div>
+        </div>
+        <div class="pill-stat-box">
+          <div class="pill-stat-val" style="font-size:15px;color:var(--muted)">${m.totalCount ?? '—'}</div>
+          <div class="pill-stat-label">${t('full_pack')}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============ MULTILINGUAL i18n ENGINE ============
+const TRANSLATIONS = {
+  en: {
+    // Login
+    login_sub: 'Medication adherence, built for families',
+    full_name: 'Full name', phone: 'Phone number', i_am: 'I am a…',
+    role_patient: 'Patient', role_caretaker: 'Caretaker', role_family: 'Family',
+    patient_id: 'Patient ID (caretaker/family enter this)',
+    continue_btn: 'Continue →', patient_setup: 'Patient Setup',
+    // Onboarding
+    medical_conditions: 'Medical conditions', ob1_sub: 'Tell us about your health so we can help you better',
+    age_lbl: 'Age', conditions_lbl: 'Diagnosed conditions', allergies_lbl: 'Allergies (if any)',
+    doctor_lbl: 'Doctor name', caretaker_ph_lbl: 'Emergency contact (caretaker phone)',
+    family_ph_lbl: 'Family contact phone', next_meds: 'Next: Add medications →',
+    your_medications: 'Your medications', ob2_sub: 'Add each tablet or medication you take daily',
+    add_new_med: 'Add new medication', med_name_lbl: 'Medication name', dosage_lbl: 'Dosage',
+    meal_lbl: 'Before / After meals', count_lbl: '🔢 Total tablet count', expiry_lbl: '📅 Expiry date',
+    add_med_btn: '+ Add medication', next_timings: 'Next: Set timings →', back_btn: '← Back',
+    set_schedule: 'Set your schedule', ob3_sub: "Pick when you take each medication. We'll send you reminders.",
+    notif_pref: 'Notification preference', breakfast_lbl: 'Breakfast reminder time',
+    lunch_lbl: 'Lunch reminder time', dinner_lbl: 'Dinner reminder time', finish_btn: 'Finish setup ✓',
+    // Patient dashboard
+    todays_adherence: "Today's adherence", todays_schedule: "Today's schedule",
+    this_month: 'This month', med_inventory: '💊 Medication inventory', tap_update: 'Tap to update stock',
+    tablets_left: 'Tablets left', full_pack: 'Full pack size', signout: 'Sign out',
+    // Caretaker
+    ct_panel: 'Caretaker panel', managing: 'Managing:',
+    today_tab: 'Today', calendar_tab: 'Calendar', log_tab: 'Action log',
+    patient_status: 'Patient status', log_action: 'Log an action',
+    called_at: 'I called the patient at', outcome_lbl: 'Outcome',
+    log_btn: 'Log this action',
+    // Family
+    fam_overview: 'Family overview', watching: 'Watching over:',
+    history_tab: 'History', inventory_tab: 'Inventory',
+    todays_adherence_fam: "Today's adherence", mark_action: 'Mark family action',
+    what_happened: 'What happened?', update_btn: 'Update status', live_stock: 'Live stock view',
+    patients_month: "Patient's month",
+    // Notifications
+    notif_title_med: 'Time for your medication',
+    hear_reminder: 'Hear this reminder', speaking_tap: 'Speaking… (tap to stop)',
+    yes_took: 'Yes, I took it ✓', no_btn: 'No',
+    please_respond: 'Please respond within 15 minutes',
+    ct_alert_title: 'Patient needs attention',
+    fam_alert_title: 'Family alert',
+    acknowledged: 'Acknowledged →', ill_handle: "I'll handle it →",
+    inv_alert_title: 'Medication supply low',
+    arrange_refill: "I'll arrange a refill →",
+    // Outcomes
+    outcome_ans_yes: 'Patient answered — will take medication',
+    outcome_ans_no: 'Patient answered — refused',
+    outcome_no_ans: 'No answer — heading to their house',
+    outcome_vis_yes: 'Visited — medication taken',
+    outcome_vis_no: 'Visited — patient still refused',
+    fam_called_yes: 'I called — patient will take medication',
+    fam_called_no: 'I called — patient refused',
+    fam_visit_yes: 'I visited — medication taken',
+    fam_visit_ref: 'I visited — patient firmly refuses. Stop notifications.',
+    // Misc
+    refill_btn: '+ Refill', action_history: 'Action history', full_history: 'Full history',
+    no_actions: 'No actions yet', no_schedule: 'No medications scheduled',
+    taken: 'Taken', missed: 'Missed', refused: 'Refused', pending: 'Pending',
+  },
+
+  hi: {
+    login_sub: 'परिवारों के लिए बनाया गया दवा अनुपालन ऐप',
+    full_name: 'पूरा नाम', phone: 'फ़ोन नंबर', i_am: 'मैं हूँ…',
+    role_patient: 'मरीज़', role_caretaker: 'देखभालकर्ता', role_family: 'परिवार',
+    patient_id: 'मरीज़ की ID (देखभालकर्ता/परिवार यहाँ डालें)',
+    continue_btn: 'जारी रखें →', patient_setup: 'मरीज़ सेटअप',
+    medical_conditions: 'स्वास्थ्य जानकारी', ob1_sub: 'आपकी बेहतर देखभाल के लिए स्वास्थ्य विवरण बताएं',
+    age_lbl: 'उम्र', conditions_lbl: 'बीमारियाँ', allergies_lbl: 'एलर्जी (यदि कोई हो)',
+    doctor_lbl: 'डॉक्टर का नाम', caretaker_ph_lbl: 'देखभालकर्ता का फ़ोन',
+    family_ph_lbl: 'परिवार का फ़ोन', next_meds: 'अगला: दवाएं जोड़ें →',
+    your_medications: 'आपकी दवाएं', ob2_sub: 'प्रतिदिन ली जाने वाली प्रत्येक दवा जोड़ें',
+    add_new_med: 'नई दवा जोड़ें', med_name_lbl: 'दवा का नाम', dosage_lbl: 'खुराक',
+    meal_lbl: 'खाने से पहले / बाद में', count_lbl: '🔢 कुल गोलियों की संख्या', expiry_lbl: '📅 समाप्ति तारीख',
+    add_med_btn: '+ दवा जोड़ें', next_timings: 'अगला: समय निर्धारित करें →', back_btn: '← वापस',
+    set_schedule: 'अपना शेड्यूल सेट करें', ob3_sub: 'प्रत्येक दवा का समय चुनें। हम आपको याद दिलाएंगे।',
+    notif_pref: 'सूचना प्राथमिकता', breakfast_lbl: 'नाश्ते का समय',
+    lunch_lbl: 'दोपहर के भोजन का समय', dinner_lbl: 'रात के खाने का समय', finish_btn: 'सेटअप पूरा करें ✓',
+    todays_adherence: 'आज का अनुपालन', todays_schedule: 'आज का शेड्यूल',
+    this_month: 'यह महीना', med_inventory: '💊 दवा भंडार', tap_update: 'स्टॉक अपडेट करने के लिए टैप करें',
+    tablets_left: 'बची हुई गोलियाँ', full_pack: 'पूरा पैक', signout: 'साइन आउट',
+    ct_panel: 'देखभालकर्ता पैनल', managing: 'प्रबंधन:',
+    today_tab: 'आज', calendar_tab: 'कैलेंडर', log_tab: 'कार्य लॉग',
+    patient_status: 'मरीज़ की स्थिति', log_action: 'कार्य दर्ज करें',
+    called_at: 'मैंने मरीज़ को फ़ोन किया', outcome_lbl: 'परिणाम',
+    log_btn: 'यह कार्य दर्ज करें',
+    fam_overview: 'परिवार अवलोकन', watching: 'देखभाल:',
+    history_tab: 'इतिहास', inventory_tab: 'भंडार',
+    todays_adherence_fam: 'आज का अनुपालन', mark_action: 'परिवार की कार्रवाई',
+    what_happened: 'क्या हुआ?', update_btn: 'स्थिति अपडेट करें', live_stock: 'लाइव स्टॉक',
+    patients_month: 'मरीज़ का महीना',
+    notif_title_med: 'दवा लेने का समय',
+    hear_reminder: 'यह रिमाइंडर सुनें', speaking_tap: 'बोल रहा है… (रोकने के लिए टैप करें)',
+    yes_took: 'हाँ, मैंने ले ली ✓', no_btn: 'नहीं',
+    please_respond: 'कृपया 15 मिनट में जवाब दें',
+    ct_alert_title: 'मरीज़ पर ध्यान चाहिए',
+    fam_alert_title: 'परिवार अलर्ट',
+    acknowledged: 'समझ गया →', ill_handle: 'मैं देखूँगा/देखूँगी →',
+    inv_alert_title: 'दवा का स्टॉक कम है',
+    arrange_refill: 'मैं रिफिल का इंतज़ाम करूँगा →',
+    outcome_ans_yes: 'मरीज़ ने उठाया — दवा लेंगे',
+    outcome_ans_no: 'मरीज़ ने उठाया — मना किया',
+    outcome_no_ans: 'जवाब नहीं — घर जा रहे हैं',
+    outcome_vis_yes: 'मिले — दवा ले ली',
+    outcome_vis_no: 'मिले — मरीज़ ने फिर मना किया',
+    fam_called_yes: 'फ़ोन किया — दवा लेंगे',
+    fam_called_no: 'फ़ोन किया — मना किया',
+    fam_visit_yes: 'मिलने गया — दवा ले ली',
+    fam_visit_ref: 'मिलने गया — दृढ़ता से मना किया। सूचनाएं बंद करें।',
+    refill_btn: '+ रिफिल', action_history: 'कार्य इतिहास', full_history: 'पूरा इतिहास',
+    no_actions: 'अभी तक कोई कार्रवाई नहीं', no_schedule: 'कोई दवा शेड्यूल नहीं',
+    taken: 'ली गई', missed: 'छूटी', refused: 'मना किया', pending: 'बाकी',
+  },
+
+  te: {
+    login_sub: 'కుటుంబాల కోసం నిర్మించిన మందుల నిర్వహణ యాప్',
+    full_name: 'పూర్తి పేరు', phone: 'ఫోన్ నంబర్', i_am: 'నేను…',
+    role_patient: 'రోగి', role_caretaker: 'సంరక్షకుడు', role_family: 'కుటుంబం',
+    patient_id: 'రోగి ID (సంరక్షకుడు/కుటుంబం నమోదు చేయండి)',
+    continue_btn: 'కొనసాగించు →', patient_setup: 'రోగి సెటప్',
+    medical_conditions: 'వైద్య సమాచారం', ob1_sub: 'మీ ఆరోగ్యం గురించి చెప్పండి, మేము సహాయం చేస్తాం',
+    age_lbl: 'వయసు', conditions_lbl: 'రోగ నిర్ధారణలు', allergies_lbl: 'అలర్జీలు (ఏదైనా ఉంటే)',
+    doctor_lbl: 'డాక్టర్ పేరు', caretaker_ph_lbl: 'సంరక్షకుని ఫోన్',
+    family_ph_lbl: 'కుటుంబ ఫోన్', next_meds: 'తదుపరి: మందులు జోడించండి →',
+    your_medications: 'మీ మందులు', ob2_sub: 'రోజూ తీసుకునే ప్రతి మందును జోడించండి',
+    add_new_med: 'కొత్త మందు జోడించు', med_name_lbl: 'మందు పేరు', dosage_lbl: 'మోతాదు',
+    meal_lbl: 'భోజనానికి ముందు / తర్వాత', count_lbl: '🔢 మొత్తం మాత్రల సంఖ్య', expiry_lbl: '📅 గడువు తేదీ',
+    add_med_btn: '+ మందు జోడించు', next_timings: 'తదుపరి: సమయాలు నిర్ణయించండి →', back_btn: '← వెనుకకు',
+    set_schedule: 'మీ షెడ్యూల్ సెట్ చేయండి', ob3_sub: 'ప్రతి మందుకు సమయం ఎంచుకోండి. మేము గుర్తు చేస్తాం.',
+    notif_pref: 'నోటిఫికేషన్ ప్రాధాన్యత', breakfast_lbl: 'అల్పాహారం సమయం',
+    lunch_lbl: 'మధ్యాహ్న భోజన సమయం', dinner_lbl: 'రాత్రి భోజన సమయం', finish_btn: 'సెటప్ పూర్తి చేయండి ✓',
+    todays_adherence: 'నేటి అనుపాలన', todays_schedule: 'నేటి షెడ్యూల్',
+    this_month: 'ఈ నెల', med_inventory: '💊 మందుల నిల్వ', tap_update: 'స్టాక్ అప్‌డేట్ చేయడానికి నొక్కండి',
+    tablets_left: 'మాత్రలు మిగిలాయి', full_pack: 'పూర్తి ప్యాక్', signout: 'సైన్ అవుట్',
+    ct_panel: 'సంరక్షకుని పేనల్', managing: 'నిర్వహిస్తున్నారు:',
+    today_tab: 'నేడు', calendar_tab: 'క్యాలెండర్', log_tab: 'చర్య లాగ్',
+    patient_status: 'రోగి స్థితి', log_action: 'చర్య నమోదు చేయండి',
+    called_at: 'నేను రోగికి ఫోన్ చేసాను', outcome_lbl: 'ఫలితం',
+    log_btn: 'ఈ చర్య నమోదు చేయండి',
+    fam_overview: 'కుటుంబ అవలోకనం', watching: 'జాగ్రత్తగా చూస్తున్నారు:',
+    history_tab: 'చరిత్ర', inventory_tab: 'నిల్వ',
+    todays_adherence_fam: 'నేటి అనుపాలన', mark_action: 'కుటుంబ చర్య',
+    what_happened: 'ఏం జరిగింది?', update_btn: 'స్థితి అప్‌డేట్ చేయండి', live_stock: 'లైవ్ స్టాక్',
+    patients_month: 'రోగి నెల',
+    notif_title_med: 'మందు తీసుకునే సమయం',
+    hear_reminder: 'ఈ రిమైండర్ వినండి', speaking_tap: 'మాట్లాడుతోంది… (ఆపడానికి నొక్కండి)',
+    yes_took: 'అవును, తీసుకున్నాను ✓', no_btn: 'లేదు',
+    please_respond: 'దయచేసి 15 నిమిషాల్లో స్పందించండి',
+    ct_alert_title: 'రోగికి శ్రద్ధ అవసరం',
+    fam_alert_title: 'కుటుంబ హెచ్చరిక',
+    acknowledged: 'అర్థమైంది →', ill_handle: 'నేను చూసుకుంటాను →',
+    inv_alert_title: 'మందుల స్టాక్ తక్కువగా ఉంది',
+    arrange_refill: 'నేను రీఫిల్ ఏర్పాటు చేస్తాను →',
+    outcome_ans_yes: 'రోగి స్పందించారు — మందు తీసుకుంటారు',
+    outcome_ans_no: 'రోగి స్పందించారు — నిరాకరించారు',
+    outcome_no_ans: 'సమాధానం లేదు — ఇంటికి వెళ్తున్నారు',
+    outcome_vis_yes: 'సందర్శించారు — మందు తీసుకున్నారు',
+    outcome_vis_no: 'సందర్శించారు — రోగి ఇంకా నిరాకరించారు',
+    fam_called_yes: 'ఫోన్ చేసాను — మందు తీసుకుంటారు',
+    fam_called_no: 'ఫోన్ చేసాను — నిరాకరించారు',
+    fam_visit_yes: 'సందర్శించాను — మందు తీసుకున్నారు',
+    fam_visit_ref: 'సందర్శించాను — దృఢంగా నిరాకరించారు. నోటిఫికేషన్లు ఆపండి.',
+    refill_btn: '+ రీఫిల్', action_history: 'చర్య చరిత్ర', full_history: 'పూర్తి చరిత్ర',
+    no_actions: 'ఇంకా చర్యలు లేవు', no_schedule: 'మందులు షెడ్యూల్ చేయబడలేదు',
+    taken: 'తీసుకున్నారు', missed: 'తప్పిపోయింది', refused: 'నిరాకరించారు', pending: 'పెండింగ్',
+  },
+
+  mr: {
+    login_sub: 'कुटुंबासाठी बनवलेले औषध अनुपालन अॅप',
+    full_name: 'पूर्ण नाव', phone: 'फोन नंबर', i_am: 'मी आहे…',
+    role_patient: 'रुग्ण', role_caretaker: 'काळजीवाहक', role_family: 'कुटुंब',
+    patient_id: 'रुग्ण ID (काळजीवाहक/कुटुंब यांनी टाकावे)',
+    continue_btn: 'पुढे चला →', patient_setup: 'रुग्ण सेटअप',
+    medical_conditions: 'वैद्यकीय माहिती', ob1_sub: 'आम्ही तुम्हाला मदत करण्यासाठी तुमच्या आरोग्याबद्दल सांगा',
+    age_lbl: 'वय', conditions_lbl: 'निदान झालेले आजार', allergies_lbl: 'ॲलर्जी (असल्यास)',
+    doctor_lbl: 'डॉक्टरांचे नाव', caretaker_ph_lbl: 'काळजीवाहकाचा फोन',
+    family_ph_lbl: 'कुटुंबाचा फोन', next_meds: 'पुढे: औषधे जोडा →',
+    your_medications: 'तुमची औषधे', ob2_sub: 'दररोज घेतलेल्या प्रत्येक औषधाची नोंद करा',
+    add_new_med: 'नवीन औषध जोडा', med_name_lbl: 'औषधाचे नाव', dosage_lbl: 'मात्रा',
+    meal_lbl: 'जेवणापूर्वी / नंतर', count_lbl: '🔢 एकूण गोळ्यांची संख्या', expiry_lbl: '📅 एक्सपायरी तारीख',
+    add_med_btn: '+ औषध जोडा', next_timings: 'पुढे: वेळ ठरवा →', back_btn: '← मागे',
+    set_schedule: 'तुमचे वेळापत्रक सेट करा', ob3_sub: 'प्रत्येक औषधाची वेळ निवडा. आम्ही स्मरण करून देऊ.',
+    notif_pref: 'सूचना प्राधान्यता', breakfast_lbl: 'नाश्त्याची वेळ',
+    lunch_lbl: 'दुपारच्या जेवणाची वेळ', dinner_lbl: 'रात्रीच्या जेवणाची वेळ', finish_btn: 'सेटअप पूर्ण करा ✓',
+    todays_adherence: 'आजचे अनुपालन', todays_schedule: "आजचे वेळापत्रक",
+    this_month: 'हा महिना', med_inventory: '💊 औषध साठा', tap_update: 'साठा अपडेट करण्यासाठी टॅप करा',
+    tablets_left: 'उरलेल्या गोळ्या', full_pack: 'पूर्ण पॅक', signout: 'साइन आउट',
+    ct_panel: 'काळजीवाहक पॅनेल', managing: 'व्यवस्थापन:',
+    today_tab: 'आज', calendar_tab: 'दिनदर्शिका', log_tab: 'कृती नोंदी',
+    patient_status: 'रुग्णाची स्थिती', log_action: 'कृती नोंदवा',
+    called_at: 'मी रुग्णाला फोन केला', outcome_lbl: 'परिणाम',
+    log_btn: 'ही कृती नोंदवा',
+    fam_overview: 'कुटुंब दृष्टिकोन', watching: 'लक्ष ठेवत आहे:',
+    history_tab: 'इतिहास', inventory_tab: 'साठा',
+    todays_adherence_fam: 'आजचे अनुपालन', mark_action: 'कुटुंबाची कृती',
+    what_happened: 'काय झाले?', update_btn: 'स्थिती अपडेट करा', live_stock: 'लाइव्ह साठा',
+    patients_month: 'रुग्णाचा महिना',
+    notif_title_med: 'औषध घेण्याची वेळ',
+    hear_reminder: 'हे स्मरण ऐका', speaking_tap: 'बोलत आहे… (थांबवण्यासाठी टॅप करा)',
+    yes_took: 'होय, मी घेतले ✓', no_btn: 'नाही',
+    please_respond: 'कृपया १५ मिनिटांत प्रतिसाद द्या',
+    ct_alert_title: 'रुग्णाला लक्ष हवे आहे',
+    fam_alert_title: 'कुटुंब सतर्कता',
+    acknowledged: 'समजले →', ill_handle: 'मी बघतो/बघते →',
+    inv_alert_title: 'औषधांचा साठा कमी आहे',
+    arrange_refill: 'मी रिफिल व्यवस्था करतो →',
+    outcome_ans_yes: 'रुग्णाने उत्तर दिले — औषध घेतील',
+    outcome_ans_no: 'रुग्णाने उत्तर दिले — नकार दिला',
+    outcome_no_ans: 'उत्तर नाही — घरी जात आहे',
+    outcome_vis_yes: 'भेट दिली — औषध घेतले',
+    outcome_vis_no: 'भेट दिली — रुग्णाने तरीही नकार दिला',
+    fam_called_yes: 'फोन केला — औषध घेतील',
+    fam_called_no: 'फोन केला — नकार दिला',
+    fam_visit_yes: 'भेट दिली — औषध घेतले',
+    fam_visit_ref: 'भेट दिली — ठामपणे नकार दिला. सूचना थांबवा.',
+    refill_btn: '+ रिफिल', action_history: 'कृती इतिहास', full_history: 'पूर्ण इतिहास',
+    no_actions: 'अद्याप कोणतीही कृती नाही', no_schedule: 'कोणतीही औषधे शेड्यूल केलेली नाहीत',
+    taken: 'घेतले', missed: 'चुकले', refused: 'नकार', pending: 'प्रलंबित',
+  }
+};
+
+// Current language
+let currentLang = 'en';
+
+// Get translation string
+function t(key) {
+  return (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key])
+    || TRANSLATIONS['en'][key]
+    || key;
+}
+
+// Apply language to all data-i18n elements
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+
+  // Translate <option> elements with data-i18n
+  document.querySelectorAll('option[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+
+  // Translate meal select options by data-i18n-meal attribute
+  const mealMap = {
+    before: { en:'Before meals', hi:'खाने से पहले', te:'భోజనానికి ముందు', mr:'जेवणापूर्वी' },
+    after:  { en:'After meals',  hi:'खाने के बाद',  te:'భోजనం తర్వాత',   mr:'जेवणानंतर' },
+    with:   { en:'With meals',   hi:'खाने के साथ',  te:'భోజనంతో',         mr:'जेवणासोबत' },
+    any:    { en:'Anytime',      hi:'कभी भी',       te:'ఎప్పుడైనా',       mr:'कधीही' },
+  };
+  document.querySelectorAll('[data-i18n-meal]').forEach(el => {
+    const key = el.getAttribute('data-i18n-meal');
+    el.textContent = (mealMap[key] && mealMap[key][currentLang]) || mealMap[key]?.en || el.textContent;
+  });
+
+  // Update body font class
+  document.body.classList.remove('lang-en','lang-hi','lang-te','lang-mr');
+  document.body.classList.add('lang-' + currentLang);
+  document.documentElement.lang = currentLang === 'hi' || currentLang === 'mr' ? 'hi' : currentLang === 'te' ? 'te' : 'en';
+
+  // Update dynamic UI elements
+  updateDynamicI18n();
+}
+
+function updateDynamicI18n() {
+  // Notification popup
+  const vbText = document.getElementById('voice-btn-text');
+  if (vbText && !document.getElementById('voice-notif-btn')?.classList.contains('speaking')) {
+    vbText.textContent = t('hear_reminder');
+  }
+  const countdown = document.getElementById('notif-countdown');
+  if (countdown && countdown.textContent) countdown.textContent = t('please_respond');
+  const notifYes = document.getElementById('notif-yes-btn');
+  if (notifYes) notifYes.textContent = t('yes_took');
+  const notifNo = document.getElementById('notif-no-btn');
+  if (notifNo) notifNo.textContent = t('no_btn');
+}
+
+// Set language and sync all lang buttons
+function setLang(lang, clickedBtn) {
+  currentLang = lang;
+  state.lang = lang;
+  // Sync ALL lang buttons across all screens
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  // Activate all buttons matching this language
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    if (btn.getAttribute('onclick') === `setLang('${lang}',this)`) {
+      btn.classList.add('active');
+    }
+  });
+  applyLang();
+}
+
+// Voice reminder message per language
+function getVoiceMessage(sched) {
+  const name = state.name ? state.name.split(' ')[0] : '';
+  const hour = now().getHours();
+  const lang = currentLang;
+
+  if (lang === 'hi') {
+    const time = hour < 12 ? 'सुबह' : hour < 17 ? 'दोपहर' : 'शाम';
+    return `नमस्ते ${name}! ${time} का समय हो गया है। यह आपका MediCare रिमाइंडर है। कृपया अपनी दवा ${sched.name}, ${sched.dose}, ${sched.meal} लें। आपका स्वास्थ्य हमारे लिए बहुत महत्वपूर्ण है। धन्यवाद।`;
+  } else if (lang === 'te') {
+    const time = hour < 12 ? 'ఉదయం' : hour < 17 ? 'మధ్యాహ్నం' : 'సాయంత్రం';
+    return `నమస్కారం ${name}! ${time} సమయం అయింది. ఇది మీ MediCare రిమైండర్. దయచేసి మీ మందు ${sched.name}, ${sched.dose}, ${sched.meal} తీసుకోండి. మీ ఆరోగ్యం మాకు చాలా ముఖ్యం. ధన్యవాదాలు.`;
+  } else if (lang === 'mr') {
+    const time = hour < 12 ? 'सकाळ' : hour < 17 ? 'दुपार' : 'संध्याकाळ';
+    return `नमस्कार ${name}! ${time}ची वेळ झाली आहे. हे तुमचे MediCare स्मरण आहे. कृपया तुमची औषधी ${sched.name}, ${sched.dose}, ${sched.meal} घ्या. तुमचे आरोग्य आम्हाला खूप महत्त्वाचे आहे. धन्यवाद.`;
+  } else {
+    const time = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+    return `Hello ${name}! Good ${time}. This is your MediCare reminder. Please take your ${sched.name}, ${sched.dose}, ${sched.meal.toLowerCase()}. Your health is very important to us. Please take your medication now. Thank you.`;
+  }
+}
+
+// Voice lang code mapping
+function getVoiceLang() {
+  return { en: 'en-IN', hi: 'hi-IN', te: 'te-IN', mr: 'mr-IN' }[currentLang] || 'en-IN';
+}
+
+// ============ LOGOUT ============
+function showLogout() {
+  clearTimers();
+  stopSpeech();
+  state = { role:null, name:'', phone:'', patientId:'PAT-001', lang: currentLang,
+    conditions:'', allergies:'', doctor:'',
+    caretakerPhone:'', familyPhone:'', age:'', medications:[],
+    scheduleTimings:{breakfast:'08:00',lunch:'13:00',dinner:'20:00'},
+    calendarData:{}, actionLog:[], notifPaused:false, currentMedNotif:null,
+    notifPhase:0, remindCount:0, notifTimers:[], todaySchedule:[] };
+  document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('login-name').value='';
+  document.getElementById('login-phone').value='';
+  show('login-screen');
+}
+
+// ============ DEMO SHORTCUTS ============
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('login-name').value = 'Ravi Kumar';
+  document.getElementById('login-phone').value = '+91 98765 43210';
+  const ptDate = document.getElementById('pt-date-disp');
+  if (ptDate) ptDate.textContent = now().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+  if (window.speechSynthesis) {
+    speechSynthesis.getVoices();
+    speechSynthesis.addEventListener('voiceschanged', () => speechSynthesis.getVoices());
+  }
+  applyLang(); // Apply default English on load
+});
+</script>
+</body>
+</html>
